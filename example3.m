@@ -1,5 +1,8 @@
 clc; clear all; close all;
 %% Example 3 Evaluation
+% The following paper { Y. K. Lin and C. F. Huang, "Stochastic flow 
+% network reliability with tolerable error rate,” Qual. Technol. Quant. Manag., 
+% vol. 10, no. 1, pp. 57–73, 2013, doi: 10.1080/16843703.2013.11673308}.
 % nodes are ordered begining from source in anticlock wise direction in
 % Fig.5
 
@@ -42,11 +45,6 @@ figure;
 % Check all possible constraints and make sure they are cleared
 plot_curve = true;  maximal_cost = []; maximal_error = 0.03; compute_fast = false;
 net.evaluate_reliability(plot_curve, maximal_cost, maximal_error, compute_fast);
-disp(net);
+disp_flow(net, 4, maximal_cost, maximal_error)
 
-%% Printing Minimal Paths
-% The following paper { Y. K. Lin and C. F. Huang, "Stochastic flow 
-% network reliability with tolerable error rate,” Qual. Technol. Quant. Manag., 
-% vol. 10, no. 1, pp. 57–73, 2013, doi: 10.1080/16843703.2013.11673308}.
-disp("Here are MP's of the network");
-celldisp(net.P.components, "MP");
+

@@ -35,7 +35,6 @@ for i=1:size(c,1)
         end
     end
 end
-celldisp(CP, 'cp');  % to print the maximal capacity vector of each element
 % defining error and cost constraints
 net.error=[4 8 6 5 5 5 5 7 3 2 5 7 5 8 5 6 2 5 5 5 5 5 5 5 4 3 2 1 3 6]/1000; 
 net.cost=[4 3 1 2 5 4 5 5 2 2 2 3 2 6 4 5 3 2 1 1 1 2 1 4 2 1 5 4 2 3];
@@ -48,7 +47,4 @@ plot_curve = true;  maximal_cost = 120; maximal_error = 0.04; compute_fast = fal
 figure;
 % Check all possible constraints and make sure they are cleared
 net.evaluate_reliability(plot_curve, maximal_cost, maximal_error, compute_fast);
-disp(net);
-disp("Reliability for differnt demand")
-disp(net.reliability.rel)
-
+disp_flow(net, 3, maximal_cost, maximal_error)

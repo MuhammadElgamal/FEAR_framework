@@ -549,6 +549,115 @@ classdef reliability_net<handle
                 disp('___________________________________________');
             end
         end
+        function disp_flow(net, required_demand, maximal_cost, maximal_error)
+            disp("_____________________________");
+            disp("Problem Specifcations");
+            fprintf("d = %d\n", required_demand);
+            if ~isempty(maximal_cost)
+                fprintf("H = %d\n", maximal_cost);
+            end
+            if ~isempty(maximal_error)
+                fprintf("E = %d\n", maximal_error);
+            end
+            disp("_____________________________");
+            mc = cellfun(@(x) length(x)-1, net.CP);
+            disp("STEP 0");
+            fprintf('Source node = %s\nTarget node = %s\n', net.source, net.target);
+            fprintf('Required Demand [d] = %d\n', required_demand);
+            fprintf('Maximal Capacity [C] = (%s)\n', num2str(mc));
+            fprintf('Number of nodes [n] = %d\nNumber of arcs [a] = %d\n',length(unique([net.source_nodes, net.target_nodes])), length(net.source_nodes));
+            if net.directed
+                disp('Arcs are unidirectional');
+            else
+                disp('Arcs are bidirectional');
+            end
+            if net.nodes_neglected
+                disp('Nodes are perfectly reilable');
+            elseif net.terminals_excluded
+                disp('All nodes are unreilable (has capacity distribution) EXCEPT source and target nodes');
+            else
+                disp('All nodes are unreilable (has capacity distribution)');
+            end
+            disp("----");
+            disp('Capacity Distribution');
+            disp("demand");
+            print_row(0: max(mc), max(mc)+1);
+            disp("Capacity: each row represents an element");
+            for i = 1: length(net.CP)
+                print_row(net.CP{i}, max(mc) + 1);
+            end
+
+            % ---------------------
+            disp("_____________________________");
+            disp("STEP 1");
+            disp("Minimal Paths");
+            cellfun(@(x) disp(x), net.P.components);
+            %---------------------
+            disp("_____________________________");
+            disp("STEP 2");
+            fprintf('Constraints\n');
+            cellfun(@(x) fprintf("'%s'\n",x), net.flow_constraints);
+            disp("----");
+            [lb, ub, A, b, C, d]=generate_constraints(net, required_demand, maximal_cost, maximal_error);
+            disp("The order of the columns is same as order of minimal paths shown earlier")
+
+            fprintf("Lower bound for flow = (%s) \nUpper bound for flow = (%s)\n", num2str(lb), num2str(ub));
+            disp("----");
+
+            fprintf("Inequality Constraints for flow A F' <= b (F is a row vector)\n");
+            disp("A = ");
+            print_matrix(A);
+            fprintf("\nb = \n");
+            print_matrix(b);
+            disp("----");
+
+            fprintf("Equality Constraints for flow C F' = d' (F is a row vector)\n");
+            disp("C = ");
+            print_matrix(C);
+            fprintf("\nd' = \n");
+            print_matrix(d');
+
+            %------------------
+            disp("_____________________________");
+            disp("STEP 3, 4");
+            disp("Acceptable flow vectors (row vectors)");
+            if required_demand + 1 <= length(net.reliability.F)
+                F = net.reliability.F{required_demand+1}
+                disp("Acceptable state vectors (row vectors)");
+                X = net.reliability.X{required_demand+1}
+            else
+                F = net.reliability.F{1}
+                disp("Acceptable state vectors (row vectors)");
+                X = net.reliability.X{1}
+            end
+            %------------------
+            disp("_____________________________");
+            disp("STEP 5");
+            if required_demand + 1 <= length(net.reliability.F)
+                R = net.reliability.rel(required_demand+1)
+            else
+                R = net.reliability.rel(1)
+            end
+
+            %% Functions
+            function print_row(x, l)
+                for i = 1: length(x)
+                    fprintf("%-10.4f",x(i));
+                end
+                for i = length(x)+1:l
+                    fprintf("%-10s","-");
+                end
+                fprintf("\n");
+            end
+            function print_matrix(x)
+                l = size(x, 2);
+                for i = 1:size(x, 1)
+                    print_row(x(i,:), l);
+                end
+            end
+
+
+        end
         function reliability_dependent_time (net, w, dist, parameters, varargin)
             R = zeros(size(net.time));
             t = net.time;

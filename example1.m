@@ -30,5 +30,4 @@ figure;
 % Check all possible constraints and make sure they are cleared
 plot_curve = true;  maximal_cost = []; maximal_error = []; compute_fast = false;
 net.evaluate_reliability(plot_curve, maximal_cost, maximal_error, compute_fast);
-disp(net);
-
+disp_flow(net, 3, maximal_cost, maximal_error);

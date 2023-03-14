@@ -52,21 +52,6 @@ net.time = completion_time;
 net.demand_in_time = ceil(demand_rate);
 net.reliability_dependent_time (c, dist, parameters);
 %% Displaying Information
-%------------- Probability Distribution -------------------------
-clc;
-disp("Here is the probility distribution of each arc");
-fprintf("   %-5d", 0:4);
-fprintf("\n");
-for i =1:length(net.CP)
-    fprintf(" %d", i);
-    fprintf(" %.5f", net.CP{i});
-    fprintf("\n");
-end
-%------------ Displying flow vectors --------------------------
-disp("Here are flow vectors for satisfying above constraints");
-disp(net.reliability.F{1});
-%------------ Displying state vectors --------------------------
-disp("Here are approximated state vectors for satisfying above constraints");
-disp(net.reliability.X{1}.* net.k);
-%-------------- Displaying network reliability -------------------
-disp("network reliability at t = "+net.time+" hr is "+net.reliability_in_time);
+disp (" Analysis at t= 40 hr");
+disp_flow(net, 60, [], []);
+
