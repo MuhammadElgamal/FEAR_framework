@@ -559,6 +559,7 @@ classdef reliability_net<handle
             if ~isempty(maximal_error)
                 fprintf("E = %d\n", maximal_error);
             end
+            
             disp("_____________________________");
             mc = cellfun(@(x) length(x)-1, net.CP);
             disp("STEP 0");
@@ -592,6 +593,11 @@ classdef reliability_net<handle
             disp("STEP 1");
             disp("Minimal Paths");
             cellfun(@(x) disp(x), net.P.components);
+            if net.cyclic
+                disp("Network is cyclic")
+            else
+                disp("Network is NOT cyclic")
+            end
             %---------------------
             disp("_____________________________");
             disp("STEP 2");
