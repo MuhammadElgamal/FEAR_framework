@@ -587,7 +587,13 @@ classdef reliability_net<handle
             for i = 1: length(net.CP)
                 print_row(net.CP{i}, max(mc) + 1);
             end
-
+            if ~isempty(maximal_cost)
+                fprintf('Maximal cost per element is %s\n', num2str(net.cost));
+            end
+            if ~isempty(maximal_error)
+                fprintf('Maximal error per element is %s\n', num2str(net.error));
+            end
+            
             % ---------------------
             disp("_____________________________");
             disp("STEP 1");
@@ -628,13 +634,15 @@ classdef reliability_net<handle
             disp("STEP 3, 4");
             disp("Acceptable flow vectors (row vectors)");
             if required_demand + 1 <= length(net.reliability.F)
-                F = net.reliability.F{required_demand+1}
+                W = net.reliability.F{required_demand+1}
                 disp("Acceptable state vectors (row vectors)");
-                X = net.reliability.X{required_demand+1}
+                fprintf("psi(T[W]) = ")
+                net.reliability.X{required_demand+1}
             else
-                F = net.reliability.F{1}
+                W = net.reliability.F{1}
                 disp("Acceptable state vectors (row vectors)");
-                X = net.reliability.X{1}
+                fprintf("psi(T[W]) = ")
+                net.reliability.X{1}
             end
             %------------------
             disp("_____________________________");
