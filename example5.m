@@ -54,4 +54,6 @@ net.reliability_dependent_time (c, dist, parameters);
 %% Displaying Information
 disp (" Analysis at t= 40 hr");
 disp_flow(net, 60, [], []);
+plot(net); % plotting must be done after taking CP because arc thikness is proportional to average capacity per arc
+
 

@@ -48,4 +48,5 @@ net.time = completion_time;
 net.demand_in_time = ceil(demand_rate);
 net.reliability_dependent_time (c, dist, parameters);
 net.plot_time_reliablity();
+plot(net); % plotting must be done after taking CP because arc thikness is proportional to average capacity per arc
 

@@ -1,31 +1,31 @@
 classdef reliability_net<handle
     properties
-        source;    % positive integer for instance '1'
-        target;    % positive integer
+        source;    % [charcter array] positive integer for instance '1'
+        target;    % [charcter array] positive integer for instance '7'
         % Network Specs
-        directed=true;
-        nodes_neglected=false;
-        terminals_excluded=false;
-        source_nodes; % for instance {'1', '2'}
-        target_nodes; % for instance {'1', '2'}
+        directed=true;              % [logical variable] specifies if arcs are directed or not
+        nodes_neglected=false;      % [logical variable] if nodes are perfectly reliable then set nodes_negelected to true
+        terminals_excluded=false;   % [logical variable]  if terminals are perfectly reliable then set this to true; this property is useful when nodes are not reliable and only terminals are reliable
+        source_nodes; % [cell array of charcters] for instance {'1', '2'}
+        target_nodes; % [cell array of charcters] for instance {'1', '2'}
         graph;        % a graph object containing netwrok structure
-        P;            % a cell array contains minimal paths of the network
-        cyclic;       % a boolean variable that checks network cyclicity
+        P;            % [struct] has fields 'arcs' and 'components' (both of them is cell array) and it contains minimal paths of the network. 'arcs' is the indices of arcs of the minimal path. 'components' contains nodes if nodes ae unreliable
+        cyclic;       % [logical variable] that checks network cyclicity
         % Parameters associated to components
-        demand; % probavility distribution of demand levels
-        CP;     % cost probability density function from capacity 0 to final capacity
-        cost;   % cost per transmission
-        error;  % Error per transmission
-        k;      % capacity of number of components in the connected arc.
+        demand; % [row matrix] probability distribution of demand levels
+        CP;     % [cell array] cost probability density function from capacity 0 to final capacity
+        cost;   % [row matrix] cost per transmission
+        error;  % [row matrix] Error per transmission
+        k;      % [row matrix] capacity of number of components in the connected arc.
         % Evaluated Reliability
-        reliability;   % a struct with fields rel,demand
+        reliability;   % [struct] with fields rel,demand: this property is useful for static SFNs, rel is a row containg reliability values against demand stored at demand field
         % Available Constarints
-        flow_constraints={'flow=demand', 'less than Lj', 'maximal capacity constraint', 'cost', 'error'};
+        flow_constraints={'flow=demand', 'less than Lj', 'maximal capacity constraint', 'cost', 'error'}; % [cell array: each element is a charceter array]these are all possible constraints considered within our work
         % Time dependent objects
-        time;
-        demand_in_time;
-        reliability_in_time;
-        arc_reliability;
+        time;                       % [row matrix] contains time instances at which dynamic reliability is evaluated
+        demand_in_time;             % [row matrix] contains demand in time instances intially, then it  is updated throughout the code at each instance of simulating dynamic reliability
+        reliability_in_time;        % [row matrix] contains reliability against time instnaces
+        arc_reliability;            % [float matrix] each row is reliability against time for arc i
         % Maintenece Parameters
     end
 
@@ -99,6 +99,9 @@ classdef reliability_net<handle
             end
         end
         function shortest_paths (net, sort_output)
+            % finds minimal paths through the network, sort_output makes
+            % sure that within the same minimal paths elements are sorted
+            % ascendingly. It updates net.P
             if net.directed
                 g=net.graph;
                 % From contains all source nodes as numbers
@@ -211,10 +214,14 @@ classdef reliability_net<handle
 
         end
         function valid=check_flow(net,f, demand, maximal_cost, maximal_error)
-            % demand is the amount required by each component within an arc
-            % in order to have a specifc flow so it is not passage of
-            % number of components but passage of number of units by each
-            % component
+            % this method checks if a specific flow vector [row matrix]
+            % follows specific constraints. f has flow in each minimal path
+            % as ordered in net.P.arcs. demand is is the amount required by 
+            % each component within an arc in order to have a specifc flow 
+            % so it is not passage of number of components but passage of 
+            % number of units by each component. maximal_cost and
+            % maximal_error are set to empty arrays in case they are not
+            % used
             if length(f)~=length(net.P.components)
                 error('Size of flow vector is not same as count of minimal paths');
             end
@@ -277,6 +284,9 @@ classdef reliability_net<handle
 
         end
         function [lb, ub, A, b, C, d]=generate_constraints(net, demand, maximal_cost, maximal_error)
+            % generates constraint matrices so flow is between lb, ub
+            % A F' <= b such that F is row vector represents flow vector
+            % C F' = d is an equation applied on F
             lb=zeros(1, length(net.P.arcs));
             ub=lb+demand;
             A=[]; b=[]; C=[]; d=[];
@@ -330,6 +340,8 @@ classdef reliability_net<handle
             ub=min(ub, [], 1);
         end
         function X=make_state(net, f)
+            % converts a flow matrix (each row is a flow vector) to a state
+            % matrix where each row is a state vector
             %% F to X transformation
             maximal_cap=cellfun(@(x) length(x), net.CP)-1;
             n=length(maximal_cap); % no. of active elements whether arcs/nodes
@@ -349,6 +361,9 @@ classdef reliability_net<handle
             X = ceil(X./net.k);   % to genralise for the sake of 2022 paper
         end
         function F=generate_flows(net, demand, maximal_cost, maximal_error, method)
+            % method contains a number either 1 or 2 to indicate used
+            % function to find all combinations of flow vectors befor
+            % applying constraints on them
             switch(method)
                 case 1
                     F=find_combinations(0:demand, length(net.P.components));
@@ -372,6 +387,7 @@ classdef reliability_net<handle
 
         end
         function [X,F]=update_state_vectors(net, F)
+            % keeps only lower boundary points
             X=[];
             for i=1:size(F,1)
                 X=[X; net.make_state(F(i, :))];
@@ -403,6 +419,8 @@ classdef reliability_net<handle
 
         end
         function [r, X, F]=calculate_reliability(net,demand, maximal_cost, maximal_error, fast, varargin)
+            % varargin contains k which is the number of components per arc
+            % which if not passed it is assumed to be one. 
             %% Data Preparation
             F=generate_flows(net, demand, maximal_cost, maximal_error, 2);
             [X,F]=update_state_vectors(net, F);
@@ -413,6 +431,7 @@ classdef reliability_net<handle
             r=rel(net, X,fast);
         end
         function r=rel(net, X,fast)
+            % applies RSDP recursively to evaluate reliability
             %% Updating X at each state
             X_new=[];
             for i=1:size(X,1)
@@ -463,11 +482,16 @@ classdef reliability_net<handle
             end
         end
         function plot(net)
+            % plots the network graphically to show its topology etc
             g=net.graph;
-            p=plot(g);
+            weights = cellfun(@(x) length(x)-1, net.CP);
+            weights = weights(1:length(net.source_nodes));
+            weights_ordered = weights;
+            p = plot(g);
+            legend("Width of arcs is proportional to maximal capacity")
             p.MarkerSize=6;
-            p.ArrowSize=8;
-            p.EdgeFontSize=14;
+            p.ArrowSize=10;
+            p.EdgeFontSize=10;
             p.NodeFontSize=14;
             p.LineWidth=g.Edges.Weight*1.5;
             p.EdgeFontWeight='bold';
@@ -478,12 +502,14 @@ classdef reliability_net<handle
                     a = net.graph.Edges(j,1).EndNodes;
                     if (a{1} == net.source_nodes{i} & ...
                             a{2} == net.target_nodes{i})
-                        edge_label{j} = char("e_" + num2str(i));
+                         edge_label{j} = char("e_{" + num2str(i)+"}");
+                         weights_ordered(j) = weights(i);
                     end
                 end
 
             end
             p.EdgeLabel = edge_label;
+            p.LineWidth = 6 * weights_ordered / max(weights_ordered);
             % Differentiating between Terminals and Non-Terminals
             s=net.source;
             t=net.target;
@@ -496,6 +522,12 @@ classdef reliability_net<handle
             p.NodeColor=node_coloring;
         end
         function evaluate_reliability(net, plot_curve, maximal_cost, maximal_error, fast, varargin)
+            % if varargin is not passed the reliability is evaluated from 0
+            % to maximal capacity of all arcs. otherwise it will be
+            % evaluated at specific demands specified by demand variable
+            % plot_curve is logical variable.
+            % maximal_cost and maximal_error can be passed as empty arrays
+            % if not used
             sort_output = true;                 % to keep MPs has sorted elements so if MP1= {1, 3, 2} it becomed MP1 ={1, 2, 3}
             net.shortest_paths (sort_output);
             if length(varargin) < 1
@@ -525,50 +557,12 @@ classdef reliability_net<handle
                 net.reliability.system_rel=net.reliability.rel*net.demand';
             end
         end
-        function disp(net)
-            fprintf('Source Node: %s\n', net.source);
-            fprintf('Target Node: %s\n', net.target);
-            if net.directed
-                disp('Arcs are unidirectional');
-            else
-                disp('Arcs are bidirectional');
-            end
-            if net.nodes_neglected
-                disp('Nodes are perfectly reilable');
-            elseif net.terminals_excluded
-                disp('All nodes are unreilable (has capacity distribution) EXCEPT source and target nodes');
-            else
-                disp('All nodes are unreilable (has capacity distribution)');
-            end
-            if net.cyclic
-                disp('Network is Cyclic');
-            else
-                disp('Network isnot Cyclic');
-            end
-            disp('___________________________________________');
-            disp('___________________________________________');
-            disp('Network Topology');
-            disp(net.graph.Edges);
-            disp('___________________________________________');
-            disp('___________________________________________');
-            disp('Minimal Paths');
-            celldisp(net.P.components, 'MP');
-            disp('___________________________________________');
-            disp('___________________________________________');
-            disp('Capacity Distribution');
-            celldisp(net.CP, 'e');
-            disp('___________________________________________');
-            disp('___________________________________________');
-            disp('Reliability Data');
-            for i=1: length(net.reliability.demand)
-                disp(" At d =" + net.reliability.demand(i));
-                F = net.reliability.F{i}
-                X = net.reliability.X{i}
-                disp ("Reliability is " + net.reliability.rel(i));
-                disp('___________________________________________');
-            end
-        end
-        function disp_flow(net, required_demand, maximal_cost, maximal_error)
+       function disp_flow(net, required_demand, maximal_cost, maximal_error)
+            % displays all the steps used within the FEAR algorithm at
+            % specific demand. maximal_cost and maximal_error can be passed as empty arrays
+            % if not used. the required demand is not effective in case you
+            % show the flow for a dynamic network. In such case, the demand
+            % is at the last time instance.
             disp("_____________________________");
             disp("Problem Specifcations");
             fprintf("d = %d\n", required_demand);
@@ -692,6 +686,12 @@ classdef reliability_net<handle
 
         end
         function reliability_dependent_time (net, w, dist, parameters, varargin)
+            % w is maximal capacity vector [row matrix], dist is a cell
+            % array of strings where each string can be any of 'weibull',
+            % 'normal' or 'exponential', parameters is a cell array of
+            % parameters required for each distribution. In case there is
+            % an additional input varargin, then the reliability matrix of
+            % each arc is taken directly
             R = zeros(size(net.time));
             t = net.time;
             d = net.demand_in_time;
@@ -744,6 +744,10 @@ classdef reliability_net<handle
             ylabel("Demand");
         end
         function [arcs_maintained,simulation_count] = minimum_arc_maintainence(net, maintainence_period, service_level, maximum_arcs_maintained, c)
+            % implements our maintenence algorithm and returns  a cell
+            % array of maintained arcs at each maintenece period and the
+            % number of resimulations needed.
+            % this method updates the property arc_reliability.
             time = net.time;
             demand_in_time = net.demand_in_time;
             r_original = net.arc_reliability;

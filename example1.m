@@ -12,7 +12,7 @@ target_nodes=[8 10 9 8 9 10];
 net=reliability_net(source, sink, directed, nodes_neglected, ...
         terminals_excluded, source_nodes, target_nodes);
 % if not specificed the number of units per components is presumed to be 1
-plot(net);
+
 %% _______________ Entering Maximal Capacity for each element _______________
 % Taking the capacity probability distibution of each arc
 CP=cell(1,6);           
@@ -25,6 +25,7 @@ CP{6}=[0.05 0.25 0.7];
 
 net.take_capacity (CP);
 net.flow_constraints={'flow=demand', 'less than Lj', 'maximal capacity constraint'};
+plot(net); % plotting must be done after taking CP because arc thikness is proportional to average capacity per arc
 %% Evaluating Reliability
 figure;
 % Check all possible constraints and make sure they are cleared

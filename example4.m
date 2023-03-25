@@ -14,7 +14,6 @@ source_nodes=[31:43 31 44:46 39 47:48 33 31 49:54 53 55];       % defines all po
 target_nodes=[32:43 56 44:46 39 47:48 56 44 49:54 56 55 56];
 net=reliability_net(source, sink, directed, nodes_neglected, terminals_excluded, source_nodes, target_nodes);
 % if not specificed the number of units per components is presumed to be 1
-plot(net);
 %% Reading Capacity Distributions from attached files
 % Taking the capacity probability distibution of each arc
 % as the size of the network is very huge the data is taken from a textfile
@@ -35,11 +34,14 @@ for i=1:size(c,1)
         end
     end
 end
+
 % defining error and cost constraints
 net.error=[4 8 6 5 5 5 5 7 3 2 5 7 5 8 5 6 2 5 5 5 5 5 5 5 4 3 2 1 3 6]/1000; 
 net.cost=[4 3 1 2 5 4 5 5 2 2 2 3 2 6 4 5 3 2 1 1 1 2 1 4 2 1 5 4 2 3];
 
 net.take_capacity (CP);
+plot(net); % plotting must be done after taking CP because arc thikness is proportional to average capacity per arc
+
 net.flow_constraints={'flow=demand', 'maximal capacity constraint', 'cost', 'error'};
 plot_curve = true;  maximal_cost = 120; maximal_error = 0.04; compute_fast = false;
 % maximal_cost can be 120, 80, 60 to match with paper

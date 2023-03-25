@@ -13,7 +13,6 @@ target_nodes=[8 9 10 8 10 9];
 net=reliability_net(source, sink, directed, nodes_neglected, ...
         terminals_excluded, source_nodes, target_nodes);
 % if not specificed the number of units per components is presumed to be 1
-plot(net); 
 %% _______________ Entering Capacity Levels _________________________________
 % Taking the capacity probability distibution of each arc
 CP=cell(1,6);           
@@ -23,11 +22,14 @@ CP{3}=[0.1 0.9];
 CP{4}=CP{3};
 CP{5}=[0.2 0.8];
 CP{6}=CP{2};
+
 % Putting the cost of transmission accross each arc
 net.cost=[2 3 1 1 3 3];
 H = 18;   % Maximum cost
 % H can be any of 6, 10, 14, 18 as in paper
 net.take_capacity (CP);
+plot(net); % plotting must be done after taking CP because arc thikness is proportional to average capacity per arc
+
 net.flow_constraints={'flow=demand', 'less than Lj', 'maximal capacity constraint','cost'};
 figure;
 % Check all possible constraints and make sure they are cleared

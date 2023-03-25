@@ -16,7 +16,6 @@ target_nodes=[9   10  10  13 11 13 11 13] ;
 net=reliability_net(source, sink, directed, nodes_neglected, ...
         terminals_excluded, source_nodes, target_nodes);
 % if not specificed the number of units per components is presumed to be 1
-plot(net); 
 %% _______________   Entering Capacity ______________________________________
 % Taking the capacity probability distibution of each arc
 CP=cell(1,6);           % a cell array that contains probability distribution for each arc capacity, each cell has maximal_cap(i)+1 length and sums to one 
@@ -38,6 +37,8 @@ CP=cellfun(@(x) x./100, CP, 'UniformOutput', false);
 % error per each network element
 net.error=[5 3 6 2 8 4 4 5 8 6 7]/1000;
 net.take_capacity (CP);
+plot(net); % plotting must be done after taking CP because arc thikness is proportional to average capacity per arc
+
 net.flow_constraints={'flow=demand', 'maximal capacity constraint','error'};
 %% Estimating Reliability
 % change maximal_error to be 0.02, 0.03 to match with paper
