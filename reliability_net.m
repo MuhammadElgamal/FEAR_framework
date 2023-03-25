@@ -465,12 +465,31 @@ classdef reliability_net<handle
         function plot(net)
             g=net.graph;
             p=plot(g);
-            p.MarkerSize=5;
+            p.MarkerSize=6;
+            p.ArrowSize=8;
+            p.EdgeFontSize=14;
+            p.NodeFontSize=14;
             p.LineWidth=g.Edges.Weight*1.5;
+            p.EdgeFontWeight='bold';
+            p.NodeFontWeight='bold';
+            edge_label = cell(1,length(net.source_nodes));
+            for i = 1:length(net.source_nodes)
+                for j = 1:length(net.source_nodes)
+                    a = net.graph.Edges(j,1).EndNodes;
+                    if (a{1} == net.source_nodes{i} & ...
+                            a{2} == net.target_nodes{i})
+                        edge_label{j} = char("e_" + num2str(i));
+                    end
+                end
+
+            end
+            p.EdgeLabel = edge_label;
             % Differentiating between Terminals and Non-Terminals
             s=net.source;
             t=net.target;
             Terminals=[findnode(g,s) findnode(g,t)];
+            p.NodeLabel{Terminals(1)} = char(p.NodeLabel{Terminals(1)} + " source");
+            p.NodeLabel{Terminals(2)} = char(p.NodeLabel{Terminals(2)} + " sink");
             terminal_color=[1 1 0];
             node_coloring=zeros(size(g.Nodes,1),3);
             node_coloring(Terminals,:)=repmat(terminal_color,length(Terminals),1);
@@ -581,7 +600,7 @@ classdef reliability_net<handle
             end
             disp("----");
             disp('Capacity Distribution');
-            disp("demand");
+            disp("demand: each level is multiple of components in element i");
             print_row(0: max(mc), max(mc)+1);
             disp("Capacity: each row represents an element");
             for i = 1: length(net.CP)
